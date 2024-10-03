@@ -5,7 +5,7 @@ from collections import OrderedDict
 from transformers import Adafactor
 import pandas as pd
 import pdb
-from datasets import load_metric
+import evaluate
 import json
 from transformers import (
     AutoTokenizer,
@@ -54,6 +54,8 @@ class PRIMERSummarizer(pl.LightningModule):
         self.pad_token_id = self.tokenizer.pad_token_id
         self.use_ddp = args.multi_gpu
         self.docsep_token_id = self.tokenizer.convert_tokens_to_ids("<doc-sep>")
+        self.validation_step_outputs = []
+        self.test_step_outputs = []
 
     def __transfer_state_dict(self, model_path):
         states = torch.load(os.path.join(model_path, 'pytorch_model.bin'))
@@ -164,7 +166,7 @@ class PRIMERSummarizer(pl.LightningModule):
         return loss
 
     def compute_rouge_batch(self, input_ids, output_ids, gold_str):
-        scorer = load_metric("rouge")
+        scorer = evaluate.load("rouge")
         # pdb.set_trace()
 
         # get the input ids and attention masks together
@@ -270,8 +272,10 @@ class PRIMERSummarizer(pl.LightningModule):
         loss = self.shared_step(input_ids, output_ids)
         if self.args.compute_rouge:
             result_batch = self.compute_rouge_batch(input_ids, output_ids, tgt)
+            self.validation_step_outputs.append({"vloss": loss, "rouge_result": result_batch})
             return {"vloss": loss, "rouge_result": result_batch}
         else:
+            self.validation_step_outputs.append({"vloss": loss})
             return {"vloss": loss}
 
     def compute_rouge_all(self, outputs, output_file=None):
@@ -318,7 +322,8 @@ class PRIMERSummarizer(pl.LightningModule):
         )
         return names, metrics, avgr
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
+        outputs = self.validation_step_outputs
         for p in self.model.parameters():
             p.requires_grad = True
 
@@ -343,9 +348,12 @@ class PRIMERSummarizer(pl.LightningModule):
             return {"vloss": vloss, "log": logs, "progress_bar": logs}
 
     def test_step(self, batch, batch_idx):
-        return self.validation_step(batch, batch_idx)
+        output = self.validation_step(batch, batch_idx)
+        self.test_step_outputs.append(output)
+        return output
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
+        outputs = self.test_step_outputs
         tloss = torch.stack([x["vloss"] for x in outputs]).mean()
         self.log("tloss", tloss, sync_dist=True if self.use_ddp else False)
         output_file = "test_%s_%d_%d_beam=%d_lenPen=%.2f" % (
