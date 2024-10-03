@@ -64,7 +64,7 @@ class PRIMERSummarizer(pl.LightningModule):
         new_states['led.encoder.embed_positions.weight'] = states['model.encoder.embed_positions.weight'][2:]
         new_states['led.decoder.embed_positions.weight'] = states['model.decoder.embed_positions.weight'][2:]
         new_states['lm_head.weight'] = states['model.shared.weight']
-        config = LEDConfig.from_pretrained('F:\\resources\\PRIMER_multinews')
+        config = LEDConfig.from_pretrained(model_path)
         model = LEDForConditionalGeneration(config)
         model.load_state_dict(new_states)
         return model
