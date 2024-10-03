@@ -69,17 +69,18 @@ class ECDCJSONDataset(Dataset):
         self.dataset_type = dataset_type
 
     def __load_data(self, json_file):
-        dataset = {}
-        for doc in json.loads(open(json_file, 'r', encoding='utf-8').read()):
-            key = tuple(doc['cluster'])
-            if key not in dataset:
-                summary = re.sub(r"^\d+\.\s+", '', doc['bulletpoint_text'].strip())
-                dataset[key] = {
-                    "document": [],
-                    "summary": summary
-                }
-            dataset[key]['document'].append(doc['news_content'])
-        return list(dataset.values())
+        return json.loads(open(json_file, 'r', encoding='utf-8').read())
+        # dataset = {}
+        # for doc in json.loads(open(json_file, 'r', encoding='utf-8').read()):
+        #     key = doc['bulletpoint_text']
+        #     if key not in dataset:
+        #         summary = re.sub(r"^\d+\.\s+", '', doc['bulletpoint_text'].strip())
+        #         dataset[key] = {
+        #             "document": [],
+        #             "summary": summary
+        #         }
+        #     dataset[key]['document'].append(doc['news_content'])
+        # return list(dataset.values())
 
     def __len__(self):
         return len(self.dataset)
