@@ -3,11 +3,9 @@ import torch
 import os
 from collections import OrderedDict
 from transformers import Adafactor
-from tqdm import tqdm
-
 import pandas as pd
 import pdb
-from datasets import load_dataset, load_metric
+from datasets import load_metric
 import json
 from transformers import (
     AutoTokenizer,
@@ -17,15 +15,7 @@ from transformers import (
     LEDTokenizer,
     LEDForConditionalGeneration,
 )
-from dataloader import (
-    get_dataloader_summ,
-    get_dataloader_summiter,
-)
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.plugins import DDPPlugin
-from pathlib import Path
 
 def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=-100):
     """From fairseq"""
@@ -66,7 +56,7 @@ class PRIMERSummarizer(pl.LightningModule):
         self.docsep_token_id = self.tokenizer.convert_tokens_to_ids("<doc-sep>")
 
     def __transfer_state_dict(self, model_path):
-        states = torch.load(model_path)
+        states = torch.load(os.path.join(model_path, 'pytorch_model.bin'))
         new_states = OrderedDict()
         for k in states:
             new_k=k.replace('model','led')

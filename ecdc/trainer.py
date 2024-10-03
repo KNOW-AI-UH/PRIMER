@@ -8,15 +8,15 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies import DDPStrategy
 from pathlib import Path
 from model import PRIMERSummarizer
 
 
 
 def train(args):
-    num_gpus = 1 if torch.cuda.device_count() and not args.enforce_cpu else 0
-    if not args.enforce_cpu and args.multi_gpu:
+    num_gpus = 1 if torch.cuda.device_count() else 0
+    if args.multi_gpu:
         num_gpus = torch.cuda.device_count()
     args.compute_rouge = True
     model = PRIMERSummarizer(args)
@@ -48,7 +48,7 @@ def train(args):
         logger=logger,
         log_every_n_steps=5,
         callbacks=checkpoint_callback,
-        progress_bar_refresh_rate=args.progress_bar_refresh_rate * args.acc_batch,
+        enable_progress_bar=False,
         precision=32,
         
     )
@@ -98,18 +98,17 @@ def train(args):
         test(args)
 
 def test(args):
-    num_gpus = 1 if torch.cuda.device_count() and not args.enforce_cpu else 0
-    if not args.enforce_cpu and args.multi_gpu:
+    num_gpus = 1 if torch.cuda.device_count() else 0
+    if args.multi_gpu:
         num_gpus = torch.cuda.device_count()
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
         devices=num_gpus,
         accelerator='gpu',
-        log_every_n_steps=5,
         max_steps=args.total_steps * args.acc_batch,
         log_every_n_steps=5,
-        progress_bar_refresh_rate=args.progress_bar_refresh_rate,
+        enable_progress_bar=False,
         precision=32,
         limit_test_batches=args.limit_test_batches if args.limit_test_batches else 1.0,
     )
@@ -120,7 +119,7 @@ def test(args):
         model = PRIMERSummarizer(args)
 
     # load dataset
-    test_json = os.path.join(args.data_path, 'test_data.json')
+    test_json = os.path.join(args.data_path, 'all_data.json')
     dataset = ECDCJSONDataset(
         test_json,
         args.join_method,
@@ -145,7 +144,7 @@ if __name__ == "__main__":
 
     ########################
     # Gneral
-    parser.add_argument("--multi_gpu", default=0, type=int, help="number of gpus to use")
+    parser.add_argument("--multi_gpu", action="store_true", help="number of gpus to use")
     parser.add_argument("--mode", default="train", choices=["train", "test"])
     parser.add_argument(
         "--model_name", default="primer",
@@ -163,7 +162,7 @@ if __name__ == "__main__":
         help="whether to compute rouge in validation steps",
     )
 
-    parser.add_argument("--progress_bar_refresh_rate", default=1, type=int)
+    
     parser.add_argument("--model_path", type=str, default="./pegasus/")
     parser.add_argument("--ckpt_path", type=str, default=None)
     parser.add_argument("--saveTopK", default=3, type=int)
