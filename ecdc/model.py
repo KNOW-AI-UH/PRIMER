@@ -232,30 +232,26 @@ class PRIMERSummarizer(pl.LightningModule):
             pred = pred.replace("<n>", "\n")
 
             if self.args.mode == "test":
-                with open(os.path.join(output_dir, "%d.txt" % (idx)), "w") as of:
+                with open(os.path.join(output_dir, "%d.txt" % (idx)), "w", encoding='utf-8') as of:
                     of.write(pred)
                 idx += 1
 
             s = scorer.compute(
                 predictions=[pred],
                 references=[ref],
-                use_agregator=False,
+                use_aggregator=False,
                 use_stemmer=True,
             )
             result_batch.append(
                 (
-                    s["rouge1"][0].recall,
-                    s["rouge1"][0].precision,
-                    s["rouge1"][0].fmeasure,
-                    s["rouge2"][0].recall,
-                    s["rouge2"][0].precision,
-                    s["rouge2"][0].fmeasure,
-                    s["rougeL"][0].recall,
-                    s["rougeL"][0].precision,
-                    s["rougeL"][0].fmeasure,
-                    s["rougeLsum"][0].recall,
-                    s["rougeLsum"][0].precision,
-                    s["rougeLsum"][0].fmeasure,
+                    s["rouge1"][0],
+                    # s["rouge1"][1],
+                    s["rouge2"][0],
+                    # s["rouge2"][1],
+                    s["rougeL"][0],
+                    # s["rougeL"][1],
+                    s["rougeLsum"][0],
+                    # s["rougeLsum"][1],
                 )
             )
 
@@ -284,9 +280,7 @@ class PRIMERSummarizer(pl.LightningModule):
         for rouge in ["1", "2", "L", "Lsum"]:
             names.extend(
                 [
-                    "rouge-{}-r".format(rouge),
-                    "rouge-{}-p".format(rouge),
-                    "rouge-{}-f".format(rouge),
+                    "rouge-{}".format(rouge),
                 ]
             )
         rouge_results = pd.DataFrame(rouge_result_all, columns=names)
@@ -300,26 +294,26 @@ class PRIMERSummarizer(pl.LightningModule):
             )
             rouge_results.to_csv(csv_name)
 
-        avgr = (avg[2] + avg[5] + avg[8]) / 3
+        avgr = (avg[0] + avg[1] + avg[2]) / 3
         metrics = avg
-        print("Validation Result at Step %d" % (self.global_step))
-        print(
-            "Rouge-1 r score: %f, Rouge-1 p score: %f, Rouge-1 f-score: %f"
-            % (metrics[0], metrics[1], metrics[2])
-        )
-        print(
-            "Rouge-2 r score: %f, Rouge-2 p score: %f, Rouge-2 f-score: %f"
-            % (metrics[3], metrics[4], metrics[5])
-        )
-        print(
-            "Rouge-L r score: %f, Rouge-L p score: %f, Rouge-L f-score: %f"
-            % (metrics[6], metrics[7], metrics[8])
-        )
-        print(
-            "Rouge-Lsum r score: %f, Rouge-Lsum p score: %f, \
-            Rouge-Lsum f-score: %f"
-            % (metrics[9], metrics[10], metrics[11])
-        )
+        # print("Validation Result at Step %d" % (self.global_step))
+        # print(
+        #     "Rouge-1 r score: %f, Rouge-1 p score: %f, Rouge-1 f-score: %f"
+        #     % (metrics[0], metrics[1], metrics[2])
+        # )
+        # print(
+        #     "Rouge-2 r score: %f, Rouge-2 p score: %f, Rouge-2 f-score: %f"
+        #     % (metrics[3], metrics[4], metrics[5])
+        # )
+        # print(
+        #     "Rouge-L r score: %f, Rouge-L p score: %f, Rouge-L f-score: %f"
+        #     % (metrics[6], metrics[7], metrics[8])
+        # )
+        # print(
+        #     "Rouge-Lsum r score: %f, Rouge-Lsum p score: %f, \
+        #     Rouge-Lsum f-score: %f"
+        #     % (metrics[9], metrics[10], metrics[11])
+        # )
         return names, metrics, avgr
 
     def on_validation_epoch_end(self):
