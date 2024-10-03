@@ -1,15 +1,15 @@
 #!/bin/bash
 #SBATCH -A project_2010972
 #SBATCH --job-name=primer_dev
-#SBATCH -o /projappl/project_2010972/logs/primer_dev.log
-#SBATCH -p gpumedium
+#SBATCH -o /projappl/project_<>/logs/primer_dev.log
+#SBATCH -p gputest
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_90
-#SBATCH --mail-user=jue.hou@helsinki.fi
+#SBATCH --mail-user=
 #SBATCH --nodes=1
 #SBATCH -c 48
-#SBATCH -t 36:00:00
+#SBATCH -t 00:15:00
 #SBATCH --mem=256G
-#SBATCH --gres=gpu:a100:4
+#SBATCH --gres=gpu:a100:2
 
 module purge
 module load pytorch/2.1
