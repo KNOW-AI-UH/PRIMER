@@ -232,7 +232,9 @@ class PRIMERSummarizer(pl.LightningModule):
             pred = pred.replace("<n>", "\n")
 
             if self.args.mode == "test":
-                with open(os.path.join(output_dir, "%d.txt" % (idx)), "w", encoding='utf-8') as of:
+                with open(os.path.join(output_dir, "ref_%d.txt" % (idx)), "w", encoding='utf-8') as of:
+                    of.write(ref)
+                with open(os.path.join(output_dir, "pred_%d.txt" % (idx)), "w", encoding='utf-8') as of:
                     of.write(pred)
                 idx += 1
 
