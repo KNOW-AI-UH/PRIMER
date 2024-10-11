@@ -23,7 +23,7 @@ def train(args):
 
     # initialize checkpoint
     if args.ckpt_path is None:
-        args.ckpt_path = args.model_path + "summ_checkpoints/"
+        args.ckpt_path = args.model_path + "/summ_checkpoints/"
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=args.ckpt_path,
@@ -35,11 +35,12 @@ def train(args):
     )
 
     # initialize logger
-    logger = TensorBoardLogger(args.model_path + "tb_logs", name="my_model")
+    logger = TensorBoardLogger(args.model_path + "/tb_logs", name="my_model")
 
     # initialize trainer
     trainer = pl.Trainer(
         devices=num_gpus,
+        num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
         accelerator='gpu',
         max_steps=args.total_steps,
         accumulate_grad_batches=args.acc_batch,
@@ -58,7 +59,7 @@ def train(args):
     dataset = ECDCJSONDataset(
         train_json,
         args.join_method,
-        args.tokenizer,
+        model.tokenizer,
         args.max_length_input,
         args.max_length_tgt,
         mask_num=5,
@@ -95,9 +96,9 @@ def train(args):
         if args.test_batch_size != -1:
             args.batch_size = args.test_batch_size
         args.mode = "test"
-        test(args)
+        test(args, 'test_data.json')
 
-def test(args):
+def test(args, json_file='all_data.json'):
     num_gpus = 1 if torch.cuda.device_count() else 0
     if args.multi_gpu:
         num_gpus = torch.cuda.device_count()
@@ -105,6 +106,7 @@ def test(args):
     # initialize trainer
     trainer = pl.Trainer(
         devices=num_gpus,
+        num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
         accelerator='gpu',
         max_steps=args.total_steps * args.acc_batch,
         log_every_n_steps=5,
@@ -119,7 +121,7 @@ def test(args):
         model = PRIMERSummarizer(args)
 
     # load dataset
-    test_json = os.path.join(args.data_path, 'all_data.json')
+    test_json = os.path.join(args.data_path, json_file)
     dataset = ECDCJSONDataset(
         test_json,
         args.join_method,
