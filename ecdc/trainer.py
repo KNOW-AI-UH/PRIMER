@@ -114,6 +114,7 @@ def test(args, json_file='all_data.json'):
         enable_progress_bar=False,
         precision=32,
         limit_test_batches=args.limit_test_batches if args.limit_test_batches else 1.0,
+        plugins=[SLURMEnvironment(auto_requeue=False)],
     )
 
     if args.resume_ckpt is not None:
@@ -134,7 +135,6 @@ def test(args, json_file='all_data.json'):
         rand_seed=1,
         is_test=False,
         dataset_type="test",
-        plugins=[SLURMEnvironment(auto_requeue=False)],
     )
     test_dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
