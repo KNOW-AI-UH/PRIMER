@@ -11,13 +11,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
 from pathlib import Path
 from model import PRIMERSummarizer
-
+from pytorch_lightning.plugins.environments import SLURMEnvironment
 
 
 def train(args):
     num_gpus = 1 if torch.cuda.device_count() else 0
     if args.multi_gpu:
-        num_gpus = torch.cuda.device_count()
+        num_gpus = -1
     args.compute_rouge = True
     model = PRIMERSummarizer(args)
 
@@ -51,7 +51,8 @@ def train(args):
         callbacks=checkpoint_callback,
         enable_progress_bar=False,
         precision=32,
-        
+        strategy=DDPStrategy(find_unused_parameters=False),
+        plugins=[SLURMEnvironment(auto_requeue=False)],
     )
 
     # load datasets
@@ -101,7 +102,7 @@ def train(args):
 def test(args, json_file='all_data.json'):
     num_gpus = 1 if torch.cuda.device_count() else 0
     if args.multi_gpu:
-        num_gpus = torch.cuda.device_count()
+        num_gpus = -1
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
@@ -133,6 +134,7 @@ def test(args, json_file='all_data.json'):
         rand_seed=1,
         is_test=False,
         dataset_type="test",
+        plugins=[SLURMEnvironment(auto_requeue=False)],
     )
     test_dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
