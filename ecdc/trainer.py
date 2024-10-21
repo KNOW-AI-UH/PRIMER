@@ -24,6 +24,8 @@ def train(args):
     # initialize checkpoint
     if args.ckpt_path is None:
         args.ckpt_path = args.model_path + "/summ_checkpoints/"
+        if not os.path.exists(args.ckpt_path):
+            os.makedirs(args.ckpt_path)
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=args.ckpt_path,
@@ -36,7 +38,6 @@ def train(args):
 
     # initialize logger
     logger = TensorBoardLogger(args.model_path + "/tb_logs", name="my_model")
-
     # initialize trainer
     trainer = pl.Trainer(
         devices=num_gpus,
@@ -275,7 +276,7 @@ if __name__ == "__main__":
     args.acc_batch = args.accum_data_per_step // args.batch_size
     args.data_path = os.path.join(args.data_path, args.dataset_name)
     if not os.path.exists(args.model_path):
-        os.makedirs(args.model_path)
+        os.makedirs(args.model_path, exist_ok=True)
 
     print(args)
     with open(
