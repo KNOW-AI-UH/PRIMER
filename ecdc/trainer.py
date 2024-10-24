@@ -15,9 +15,7 @@ from pytorch_lightning.plugins.environments import SLURMEnvironment
 
 
 def train(args):
-    num_gpus = 1 if torch.cuda.device_count() else 0
-    if args.multi_gpu:
-        num_gpus = -1
+    accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
     model = PRIMERSummarizer(args)
 
@@ -40,9 +38,9 @@ def train(args):
     logger = TensorBoardLogger(args.model_path + "/tb_logs", name="my_model")
     # initialize trainer
     trainer = pl.Trainer(
-        devices=num_gpus,
+        devices='auto',
         num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
-        accelerator='gpu',
+        accelerator=accelerator,
         max_steps=args.total_steps,
         accumulate_grad_batches=args.acc_batch,
         # val_check_interval=0.5,
@@ -101,15 +99,13 @@ def train(args):
         test(args, 'test_data.json')
 
 def test(args, json_file='all_data.json'):
-    num_gpus = 1 if torch.cuda.device_count() else 0
-    if args.multi_gpu:
-        num_gpus = -1
+    accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
-        devices=num_gpus,
+        devices='auto',
         num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
-        accelerator='gpu',
+        accelerator=accelerator,
         max_steps=args.total_steps * args.acc_batch,
         log_every_n_steps=5,
         enable_progress_bar=False,
@@ -274,6 +270,8 @@ if __name__ == "__main__":
     args = parser.parse_args()  # Get pad token id
     ####################
     args.acc_batch = args.accum_data_per_step // args.batch_size
+    if args.acc_batch < 1:
+        args.acc_batch = 1
     args.data_path = os.path.join(args.data_path, args.dataset_name)
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path, exist_ok=True)

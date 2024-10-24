@@ -79,7 +79,10 @@ class PRIMERSummarizer(pl.LightningModule):
         decoder_input_ids = output_ids[:, :-1]
 
         # get the input ids and attention masks together
-        global_attention_mask = torch.zeros_like(input_ids).cuda()
+        if torch.cuda.is_available():
+            global_attention_mask = torch.zeros_like(input_ids).cuda()
+        else:
+            global_attention_mask = torch.zeros_like(input_ids)
         # put global attention on <s> token
 
         global_attention_mask[:, 0] = 1
@@ -170,7 +173,10 @@ class PRIMERSummarizer(pl.LightningModule):
         # pdb.set_trace()
 
         # get the input ids and attention masks together
-        global_attention_mask = torch.zeros_like(input_ids).cuda()
+        if torch.cuda.is_available():
+            global_attention_mask = torch.zeros_like(input_ids).cuda()
+        else:
+            global_attention_mask = torch.zeros_like(input_ids)
         # put global attention on <s> token
 
         global_attention_mask[:, 0] = 1
