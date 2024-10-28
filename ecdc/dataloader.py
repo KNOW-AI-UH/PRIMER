@@ -57,7 +57,7 @@ class ECDCJSONDataset(Dataset):
         self.dataset = dataset
         self.join_method = join_method
         self.tokenizer = tokenizer
-        self.max_input_len = max_input_len
+        self.max_input_len = max_input_len - 2
         self.max_output_len = max_output_len
         if join_method == "concat_start_wdoc_global":
             self.docsep_token_id = self.tokenizer.additional_special_tokens_ids[0]
