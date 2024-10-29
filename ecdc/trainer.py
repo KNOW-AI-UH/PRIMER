@@ -78,15 +78,13 @@ def train(args):
     # pdb.set_trace()
     trainer.fit(model, train_dataloader, valid_dataloader)
     if args.test_imediate:
-        args.resume_ckpt = checkpoint_callback.best_model_path
-        print(args.resume_ckpt)
         if args.test_batch_size != -1:
             args.batch_size = args.test_batch_size
         args.mode = "test"
         test(args, 'test_data.json')
 
-def test(args, json_file='buggy_data.json'):
-    accelerator = 'cpu'
+def test(args, json_file='all_data.json'):
+    accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
@@ -124,7 +122,7 @@ def test(args, json_file='buggy_data.json'):
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
                                 prefetch_factor=2)
     # test
-    trainer.test(model, test_dataloader)
+    trainer.test(model, test_dataloader, ckpt_path='best')
 
 
 if __name__ == "__main__":
