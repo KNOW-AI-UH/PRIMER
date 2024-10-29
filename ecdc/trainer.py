@@ -19,19 +19,14 @@ def train(args):
     args.compute_rouge = True
     model = PRIMERSummarizer(args)
 
-    # initialize checkpoint
-    if args.ckpt_path is None:
-        args.ckpt_path = args.model_path + "/summ_checkpoints/"
-        if not os.path.exists(args.ckpt_path):
-            os.makedirs(args.ckpt_path)
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=args.ckpt_path,
         filename="{step}-{vloss:.2f}-{avgr:.4f}",
         save_top_k=args.saveTopK,
         monitor="avgr",
         mode="max",
-        save_on_train_epoch_end=False,
+        save_on_train_epoch_end=True,
+        save_last=True,
     )
 
     # initialize logger
@@ -48,6 +43,7 @@ def train(args):
         logger=logger,
         log_every_n_steps=5,
         callbacks=checkpoint_callback,
+        enable_checkpointing=True,
         enable_progress_bar=False,
         precision=32,
         strategy=DDPStrategy(find_unused_parameters=False),
@@ -98,8 +94,8 @@ def train(args):
         args.mode = "test"
         test(args, 'test_data.json')
 
-def test(args, json_file='all_data.json'):
-    accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
+def test(args, json_file='buggy_data.json'):
+    accelerator = 'cpu'
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
@@ -165,7 +161,6 @@ if __name__ == "__main__":
 
     
     parser.add_argument("--model_path", type=str, default="./pegasus/")
-    parser.add_argument("--ckpt_path", type=str, default=None)
     parser.add_argument("--saveTopK", default=3, type=int)
     parser.add_argument(
         "--resume_ckpt",
