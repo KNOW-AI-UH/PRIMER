@@ -2,7 +2,7 @@ from numpy import NaN
 import torch
 import os
 from collections import OrderedDict
-from transformers import Adafactor
+from transformers import Adafactor, pipeline
 import pandas as pd
 import pdb
 import evaluate
@@ -55,6 +55,7 @@ class PRIMERSummarizer(pl.LightningModule):
         self.pad_token_id = self.tokenizer.pad_token_id
         self.use_ddp = args.multi_gpu
         self.docsep_token_id = self.tokenizer.convert_tokens_to_ids("<doc-sep>")
+        self.fastcc = pipeline(model="manueldeprada/FactCC")
         self.validation_step_outputs = []
         self.test_step_outputs = []
 
@@ -251,6 +252,7 @@ class PRIMERSummarizer(pl.LightningModule):
                 use_aggregator=False,
                 use_stemmer=True,
             )
+            fastcc_score = self.fastcc([[[ref, pred]]], truncation='longest_first', padding='max_length')
             result_batch.append(
                 (
                     s["rouge1"][0],
@@ -261,6 +263,7 @@ class PRIMERSummarizer(pl.LightningModule):
                     # s["rougeL"][1],
                     s["rougeLsum"][0],
                     # s["rougeLsum"][1],
+                    fastcc_score[0]["label"] == 'CORRECT' and fastcc_score[0]["score"] or 1 - fastcc_score[0]["score"],
                 )
             )
 
@@ -292,6 +295,7 @@ class PRIMERSummarizer(pl.LightningModule):
                     "rouge-{}".format(rouge),
                 ]
             )
+        names.append("fastcc")
         rouge_results = pd.DataFrame(rouge_result_all, columns=names)
         avg = [rouge_results[c].mean() for c in rouge_results.columns]
         rouge_results.loc["avg_score"] = avg
