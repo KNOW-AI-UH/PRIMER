@@ -7,7 +7,6 @@ from dataloader import ECDCJSONDataset, collate_fn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
 from pathlib import Path
 from model import PRIMERSummarizer
@@ -20,14 +19,7 @@ def train(args):
     model = PRIMERSummarizer(args)
 
 
-    checkpoint_callback = ModelCheckpoint(
-        filename="{step}-{vloss:.2f}-{avgr:.4f}",
-        save_top_k=args.saveTopK,
-        monitor="avgr",
-        mode="max",
-        save_on_train_epoch_end=True,
-        save_last=True,
-    )
+    
 
     # initialize logger
     logger = TensorBoardLogger(args.model_path + "/tb_logs", name="my_model")
@@ -42,7 +34,6 @@ def train(args):
         # check_val_every_n_epoch=1 if args.num_train_data > 100 else 5,
         logger=logger,
         log_every_n_steps=5,
-        callbacks=checkpoint_callback,
         enable_checkpointing=True,
         enable_progress_bar=False,
         precision=32,
