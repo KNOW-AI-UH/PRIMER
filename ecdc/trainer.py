@@ -42,7 +42,7 @@ def train(args):
     )
 
     # load datasets
-    train_json = os.path.join(args.data_path, 'train_data.json')
+    train_json = os.path.join(args.data_path, f'train_data_{args.cluster_dist}.json')
     dataset = ECDCJSONDataset(
         train_json,
         args.join_method,
@@ -58,7 +58,7 @@ def train(args):
     train_dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
                                 prefetch_factor=2)
-    val_json = os.path.join(args.data_path, 'val_data.json')
+    val_json = os.path.join(args.data_path, f'val_data_{args.cluster_dist}.json')
     dataset = ECDCJSONDataset(
         val_json,
         args.join_method,
@@ -81,9 +81,11 @@ def train(args):
         if args.test_batch_size != -1:
             args.batch_size = args.test_batch_size
         args.mode = "test"
-        test(args, 'test_data.json')
+        test(args, f'test_data_{args.cluster_dist}.json')
 
-def test(args, json_file='all_data.json'):
+def test(args, json_file=None):
+    if json_file is None:
+        json_file = f'all_data_{args.cluster_dist}.json'
     accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
     # initialize trainer
@@ -132,6 +134,7 @@ if __name__ == "__main__":
     # Gneral
     parser.add_argument("--multi_gpu", action="store_true", help="number of gpus to use")
     parser.add_argument("--mode", default="train", choices=["train", "test"])
+    parser.add_argument("--cluster_dist", default=0.5, type=float, required=True)
     parser.add_argument(
         "--model_name", default="primer",
     )
