@@ -328,6 +328,10 @@ class PRIMERSummarizer(pl.LightningModule):
         #     % (metrics[9], metrics[10], metrics[11])
         # )
         return names, metrics, avgr
+    
+    def on_validation_epoch_start(self):
+        self.validation_step_outputs = []
+        
 
     def on_validation_epoch_end(self):
         outputs = self.validation_step_outputs
@@ -358,6 +362,9 @@ class PRIMERSummarizer(pl.LightningModule):
         output = self.validation_step(batch, batch_idx)
         self.test_step_outputs.append(output)
         return output
+
+    def on_test_epoch_start(self):
+        self.test_step_outputs = []
 
     def on_test_epoch_end(self):
         outputs = self.test_step_outputs
