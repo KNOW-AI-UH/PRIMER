@@ -16,7 +16,7 @@ from transformers import (
     LEDForConditionalGeneration,
 )
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+
 
 def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=-100):
     """From fairseq"""
@@ -391,15 +391,3 @@ class PRIMERSummarizer(pl.LightningModule):
         self.log("avgr", avgr)
         # self.log_dict(logs)
         return {"avg_test_loss": tloss, "avgr": avgr, "log": logs, "progress_bar": logs}
-
-    def configure_callbacks(self):
-        checkpoint_callback = ModelCheckpoint(
-            filename="{step}-{vloss:.2f}-{avgr:.4f}",
-            save_top_k=self.args.saveTopK,
-            monitor="avgr",
-            mode="max",
-            save_on_train_epoch_end=True,
-            save_last=True,
-            # every_n_train_steps=2,
-        )
-        return [checkpoint_callback]

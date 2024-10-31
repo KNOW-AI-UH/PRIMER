@@ -11,7 +11,7 @@ from pytorch_lightning.strategies import DDPStrategy
 from pathlib import Path
 from model import PRIMERSummarizer
 from pytorch_lightning.plugins.environments import SLURMEnvironment
-
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 def train(args):
     accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
@@ -19,7 +19,15 @@ def train(args):
     model = PRIMERSummarizer(args)
 
 
-    
+    checkpoint_callback = ModelCheckpoint(
+        filename="{step}-{vloss:.2f}-{avgr:.4f}",
+        save_top_k=args.saveTopK,
+        monitor="avgr",
+        mode="max",
+        save_on_train_epoch_end=True,
+        save_last=True,
+        # every_n_train_steps=2,
+    )
 
     # initialize logger
     logger = TensorBoardLogger(args.model_path + "/tb_logs", name="my_model")
@@ -35,10 +43,12 @@ def train(args):
         logger=logger,
         log_every_n_steps=5,
         enable_checkpointing=True,
+        callbacks=[checkpoint_callback],
         enable_progress_bar=False,
         precision=32,
         strategy=DDPStrategy(find_unused_parameters=False),
         plugins=[SLURMEnvironment(auto_requeue=False)],
+        reload_dataloaders_every_n_epochs=1,
     )
 
     # load datasets
@@ -81,6 +91,10 @@ def train(args):
         if args.test_batch_size != -1:
             args.batch_size = args.test_batch_size
         args.mode = "test"
+        args.resume_ckpt = checkpoint_callback.best_model_path
+        print(args.resume_ckpt)
+        if args.test_batch_size != -1:
+            args.batch_size = args.test_batch_size
         test(args, f'test_data_{args.cluster_dist}.json')
 
 def test(args, json_file=None):
