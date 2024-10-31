@@ -38,8 +38,8 @@ def train(args):
         accelerator=accelerator,
         max_steps=args.total_steps,
         accumulate_grad_batches=args.acc_batch,
-        val_check_interval=0.25,
-        # check_val_every_n_epoch=1 if args.num_train_data > 100 else 5,
+        # val_check_interval=10,
+        check_val_every_n_epoch=1,
         logger=logger,
         log_every_n_steps=5,
         enable_checkpointing=True,
@@ -81,7 +81,7 @@ def train(args):
         is_test=False,
         dataset_type="validation",
     )
-    valid_dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn,
+    valid_dataloader = DataLoader(dataset, batch_size=1, shuffle=True, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
                                 prefetch_factor=2)
     
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--lr", type=float, default=3e-5, help="Maximum learning rate")
     parser.add_argument(
-        "--warmup_steps", type=int, default=1000, help="Number of warmup steps"
+        "--warmup_steps", type=int, default=10, help="Number of warmup steps"
     )
     parser.add_argument(
         "--accum_data_per_step", type=int, default=16, help="Number of data per step"
