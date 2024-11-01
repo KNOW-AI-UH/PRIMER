@@ -138,7 +138,7 @@ def test(args, json_file=None):
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
                                 prefetch_factor=2)
     # test
-    trainer.test(model, test_dataloader, ckpt_path='best')
+    trainer.test(model, test_dataloader)
 
 
 if __name__ == "__main__":
