@@ -231,7 +231,7 @@ class PRIMERSummarizer(pl.LightningModule):
                 )
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-            idx = len(os.listdir(output_dir))
+            idx = len(os.listdir(output_dir)) // 2
         result_batch = []
         if self.args.debug_mode:
             pdb.set_trace()
