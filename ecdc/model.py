@@ -311,6 +311,7 @@ class PRIMERSummarizer(pl.LightningModule):
             rouge_results.to_csv(csv_name)
 
         avgr = (avg[0] + avg[1] + avg[2]) / 3
+        fastcc = avg[4]
         metrics = avg
         # print("Validation Result at Step %d" % (self.global_step))
         # print(
@@ -330,7 +331,7 @@ class PRIMERSummarizer(pl.LightningModule):
         #     Rouge-Lsum f-score: %f"
         #     % (metrics[9], metrics[10], metrics[11])
         # )
-        return names, metrics, avgr
+        return names, metrics, avgr, fastcc
     
     def on_validation_epoch_start(self):
         self.validation_step_outputs = []
@@ -344,15 +345,17 @@ class PRIMERSummarizer(pl.LightningModule):
         vloss = torch.stack([x["vloss"] for x in outputs]).mean()
         self.log("vloss", vloss, sync_dist=True if self.use_ddp else False)
         if self.args.compute_rouge:
-            names, metrics, avgr = self.compute_rouge_all(outputs, output_file="valid")
+            names, metrics, avgr, fastcc = self.compute_rouge_all(outputs, output_file="valid")
             metrics = [vloss] + metrics
             names = ["vloss"] + names
             logs = dict(zip(*[names, metrics]))
             self.logger.log_metrics(logs, step=self.global_step)
             self.log("avgr", avgr)
+            self.log('fastcc', fastcc)
             return {
                 "avg_val_loss": vloss,
                 "avgr": avgr,
+                "fastcc": fastcc,
                 "log": logs,
                 "progress_bar": logs,
             }
@@ -386,11 +389,12 @@ class PRIMERSummarizer(pl.LightningModule):
             if self.args.fewshot
             else output_file
         )
-        names, metrics, avgr = self.compute_rouge_all(outputs, output_file=output_file)
+        names, metrics, avgr, fastcc = self.compute_rouge_all(outputs, output_file=output_file)
         metrics = [tloss, avgr] + metrics
         names = ["tloss", "avgr"] + names
         logs = dict(zip(*[names, metrics]))
         self.logger.log_metrics(logs, step=self.global_step)
         self.log("avgr", avgr)
+        self.log('fastcc', fastcc)
         # self.log_dict(logs)
-        return {"avg_test_loss": tloss, "avgr": avgr, "log": logs, "progress_bar": logs}
+        return {"avg_test_loss": tloss, "avgr": avgr, "fastcc": fastcc, "log": logs, "progress_bar": logs}
