@@ -99,7 +99,7 @@ def train(args):
 
 def test(args, json_file=None):
     if json_file is None:
-        json_file = f'all_data_{args.cluster_dist}.json'
+        json_file = f'test_data_{args.cluster_dist}.json'
     accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
     # initialize trainer
@@ -107,7 +107,7 @@ def test(args, json_file=None):
         devices='auto',
         num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
         accelerator=accelerator,
-        max_steps=args.total_steps * args.acc_batch,
+        # max_steps=args.total_steps * args.acc_batch,
         log_every_n_steps=5,
         enable_progress_bar=False,
         precision=32,
@@ -134,7 +134,7 @@ def test(args, json_file=None):
         is_test=False,
         dataset_type="test",
     )
-    test_dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn,
+    test_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=args.num_workers, drop_last=True,
                                 prefetch_factor=2)
     # test
