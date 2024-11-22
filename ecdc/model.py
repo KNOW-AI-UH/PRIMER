@@ -398,6 +398,7 @@ class PRIMERSummarizer(pl.LightningModule):
         self.logger.log_metrics(logs, step=self.global_step)
         self.log("avgr", avgr)
         self.log('fastcc', fastcc)
+        self.log('distinct_2', distinct_2)
         # self.log_dict(logs)
         return {
             "avg_test_loss": tloss, 
