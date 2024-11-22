@@ -104,7 +104,7 @@ def test(args, json_file=None):
     args.compute_rouge = True
     # initialize trainer
     trainer = pl.Trainer(
-        devices='auto',
+        devices=1,
         num_nodes=int(os.environ.get('SLURM_NNODES', 1)),
         accelerator=accelerator,
         # max_steps=args.total_steps * args.acc_batch,
