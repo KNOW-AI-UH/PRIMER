@@ -254,7 +254,6 @@ class PRIMERSummarizer(pl.LightningModule):
                 use_stemmer=True,
             )
             fastcc_score = self.fastcc([[[ref, pred]]], truncation='longest_first', padding='max_length')
-            distinct_2 = distinct_n_sentence_level(pred.split(), 2)
             result_batch.append(
                 (
                     s["rouge1"][0],
@@ -266,7 +265,7 @@ class PRIMERSummarizer(pl.LightningModule):
                     s["rougeLsum"][0],
                     # s["rougeLsum"][1],
                     fastcc_score[0]["label"] == 'CORRECT' and fastcc_score[0]["score"] or 1 - fastcc_score[0]["score"],
-                    distinct_2,
+                    distinct_n_sentence_level(pred.split(), 2),
                 )
             )
 
@@ -312,6 +311,7 @@ class PRIMERSummarizer(pl.LightningModule):
 
         avgr = (avg[0] + avg[1] + avg[2]) / 3
         fastcc = avg[4]
+        distinct_2 = avg[5]
         metrics = avg
         # print("Validation Result at Step %d" % (self.global_step))
         # print(
@@ -331,7 +331,7 @@ class PRIMERSummarizer(pl.LightningModule):
         #     Rouge-Lsum f-score: %f"
         #     % (metrics[9], metrics[10], metrics[11])
         # )
-        return names, metrics, avgr, fastcc
+        return names, metrics, avgr, fastcc, distinct_2
     
     def on_validation_epoch_start(self):
         self.validation_step_outputs = []
@@ -345,17 +345,19 @@ class PRIMERSummarizer(pl.LightningModule):
         vloss = torch.stack([x["vloss"] for x in outputs]).mean()
         self.log("vloss", vloss, sync_dist=True if self.use_ddp else False)
         if self.args.compute_rouge:
-            names, metrics, avgr, fastcc = self.compute_rouge_all(outputs, output_file="valid")
+            names, metrics, avgr, fastcc, distinct_2 = self.compute_rouge_all(outputs, output_file="valid")
             metrics = [vloss] + metrics
             names = ["vloss"] + names
             logs = dict(zip(*[names, metrics]))
             self.logger.log_metrics(logs, step=self.global_step)
             self.log("avgr", avgr)
             self.log('fastcc', fastcc)
+            self.log('distinct_2', distinct_2)
             return {
                 "avg_val_loss": vloss,
                 "avgr": avgr,
                 "fastcc": fastcc,
+                "distinct_2": distinct_2,
                 "log": logs,
                 "progress_bar": logs,
             }
@@ -389,7 +391,7 @@ class PRIMERSummarizer(pl.LightningModule):
             if self.args.fewshot
             else output_file
         )
-        names, metrics, avgr, fastcc = self.compute_rouge_all(outputs, output_file=output_file)
+        names, metrics, avgr, fastcc, distinct_2 = self.compute_rouge_all(outputs, output_file=output_file)
         metrics = [tloss, avgr] + metrics
         names = ["tloss", "avgr"] + names
         logs = dict(zip(*[names, metrics]))
@@ -397,4 +399,11 @@ class PRIMERSummarizer(pl.LightningModule):
         self.log("avgr", avgr)
         self.log('fastcc', fastcc)
         # self.log_dict(logs)
-        return {"avg_test_loss": tloss, "avgr": avgr, "fastcc": fastcc, "log": logs, "progress_bar": logs}
+        return {
+            "avg_test_loss": tloss, 
+            "avgr": avgr, 
+            "fastcc": fastcc, 
+            "distinct_2": distinct_2,
+            "log": logs, 
+            "progress_bar": logs
+        }
