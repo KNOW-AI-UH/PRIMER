@@ -16,6 +16,7 @@ from transformers import (
     LEDForConditionalGeneration,
 )
 import pytorch_lightning as pl
+from distinct_n import distinct_n_sentence_level
 
 
 def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=-100):
@@ -253,6 +254,7 @@ class PRIMERSummarizer(pl.LightningModule):
                 use_stemmer=True,
             )
             fastcc_score = self.fastcc([[[ref, pred]]], truncation='longest_first', padding='max_length')
+            distinct_2 = distinct_n_sentence_level(pred.split(), 2)
             result_batch.append(
                 (
                     s["rouge1"][0],
@@ -264,6 +266,7 @@ class PRIMERSummarizer(pl.LightningModule):
                     s["rougeLsum"][0],
                     # s["rougeLsum"][1],
                     fastcc_score[0]["label"] == 'CORRECT' and fastcc_score[0]["score"] or 1 - fastcc_score[0]["score"],
+                    distinct_2,
                 )
             )
 
@@ -295,7 +298,7 @@ class PRIMERSummarizer(pl.LightningModule):
                     "rouge-{}".format(rouge),
                 ]
             )
-        names.append("fastcc")
+        names.extend(["fastcc", "distinct_2"])
         rouge_results = pd.DataFrame(rouge_result_all, columns=names)
         avg = [rouge_results[c].mean() for c in rouge_results.columns]
         rouge_results.loc["avg_score"] = avg
