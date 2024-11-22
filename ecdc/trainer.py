@@ -102,6 +102,7 @@ def test(args, json_file=None):
         json_file = f'test_data_{args.cluster_dist}.json'
     accelerator = 'gpu' if torch.cuda.device_count() else 'cpu'
     args.compute_rouge = True
+    args.multi_gpu = False
     # initialize trainer
     trainer = pl.Trainer(
         devices=1,
