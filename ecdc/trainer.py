@@ -24,7 +24,6 @@ def train(args):
         save_top_k=args.saveTopK,
         monitor="avgr",
         mode="max",
-        save_on_train_epoch_end=True,
         save_last=True,
         # every_n_train_steps=2,
     )
