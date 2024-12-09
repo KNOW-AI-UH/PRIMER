@@ -90,7 +90,7 @@ class ECDCJSONDataset(Dataset):
         all_docs = entry["document"]
         tgt = entry["summary"]
         
-        all_docs = entry['cluster'] + all_docs
+        all_docs = [_ for _ in entry['cluster'] if type(_) == str] + all_docs
         
         if self.join_method == "plain_concat":
             src = "\n".join(all_docs)

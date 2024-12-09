@@ -195,6 +195,7 @@ class PRIMERSummarizer(pl.LightningModule):
             num_beams=self.args.beam_size,
             no_repeat_ngram_size=3 if self.args.applyTriblck else None,
             length_penalty=self.args.length_penalty,
+            repetition_penalty=self.args.repetition_penalty,
         )
 
         generated_str = self.tokenizer.batch_decode(
