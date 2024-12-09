@@ -89,6 +89,9 @@ class ECDCJSONDataset(Dataset):
         entry = self.dataset[idx]
         all_docs = entry["document"]
         tgt = entry["summary"]
+        
+        all_docs = entry['cluster'] + all_docs
+        
         if self.join_method == "plain_concat":
             src = "\n".join(all_docs)
             input_ids = self.tokenizer.encode(
