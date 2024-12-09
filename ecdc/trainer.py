@@ -251,6 +251,12 @@ if __name__ == "__main__":
         help="length penalty of generated text",
     )
     parser.add_argument(
+        "--repetition_penalty",
+        type=float,
+        default=1.0,
+        help="length penalty of generated text",
+    )
+    parser.add_argument(
         "--mask_num",
         type=int,
         default=0,
