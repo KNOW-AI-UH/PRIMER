@@ -10,6 +10,27 @@ import sys
 import json
 from collections import defaultdict
 
+def insert_strings(args):
+    doc, diseases, locations = args
+    positions = []
+    strings = []
+    for idx in diseases:
+        positions.append(idx[0])
+        strings.append('<DISEASE>')
+        positions.append(idx[1])
+        strings.append('</DISEASE>')
+    for idx in locations:
+        positions.append(idx[0])
+        strings.append('<LOCATION>')
+        positions.append(idx[1])
+        strings.append('</LOCATION>')
+    
+    doc = list(doc)
+    for i, pos in enumerate(positions):
+        doc.insert(pos+i, strings[i])
+    return ''.join(doc)
+
+
 def collate_fn(batch):
     # A hack to know if this is bart or pegasus. DDP doesn't like global variables nor class-level memebr variables
     if batch[0][0][-1].item() == 2:
@@ -61,6 +82,8 @@ class ECDCJSONDataset(Dataset):
         self.max_output_len = max_output_len
         if join_method == "concat_start_wdoc_global":
             self.docsep_token_id = self.tokenizer.additional_special_tokens_ids[0]
+        self.use_dl_special_tokens = len(self.tokenizer.special_tokens_map['additional_special_tokens']) > 1
+            
         self.mask_id = self.tokenizer.mask_token_id
         self.mask_num = mask_num
         if num_data != -1 and not is_test and num_data < len(list(dataset)):
@@ -88,9 +111,11 @@ class ECDCJSONDataset(Dataset):
     def __getitem__(self, idx):
         entry = self.dataset[idx]
         all_docs = entry["document"]
+        # all_docs = [_ for _ in entry['cluster'] if type(_) == str] + entry["document"]
+        if self.use_dl_special_tokens:
+            all_docs = list(map(insert_strings, zip(entry["document"], entry['diseases'], entry['locations'])))
         tgt = entry["summary"]
         
-        all_docs = [_ for _ in entry['cluster'] if type(_) == str] + all_docs
         
         if self.join_method == "plain_concat":
             src = "\n".join(all_docs)
