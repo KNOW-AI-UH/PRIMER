@@ -25,11 +25,16 @@ def insert_strings(args):
         positions.append(idx[1])
         strings.append('</LOCATION>')
     
-    doc = list(doc)
-    for i, pos in enumerate(positions):
-        doc.insert(pos+i, strings[i])
-    return ''.join(doc)
-
+    i = iter(sorted(zip(positions, strings), key=lambda x: x[0]))
+    
+    output = ''
+    p, s = next(i, [-1, ''])
+    for c, char in enumerate(doc):
+        if c == p:
+            output += s
+            p, s = next(i, [-1, ''])
+        output += char
+    return output
 
 def collate_fn(batch):
     # A hack to know if this is bart or pegasus. DDP doesn't like global variables nor class-level memebr variables
