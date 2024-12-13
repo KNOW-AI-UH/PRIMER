@@ -47,10 +47,11 @@ class PRIMERSummarizer(pl.LightningModule):
         super(PRIMERSummarizer, self).__init__()
         self.args = args
 
-        self.tokenizer = AutoTokenizer.from_pretrained(args.primer_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
         # self.model = LEDForConditionalGeneration.from_pretrained(args.primer_path)
         self.model = self.__transfer_state_dict(args.primer_path)
         self.model.gradient_checkpointing_enable()
+        self.model.resize_token_embeddings(len(self.tokenizer))
         # if args.debug_mode:
         #     pdb.set_trace()
         self.pad_token_id = self.tokenizer.pad_token_id

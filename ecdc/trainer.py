@@ -155,6 +155,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--primer_path", type=str, default="../PRIMER/",
     )
+    parser.add_argument(
+        "--tokenizer_path", type=str, default="../PRIMER/",
+    )
     parser.add_argument("--join_method", type=str, default="concat_start_wdoc_global")
     parser.add_argument(
         "--debug_mode", action="store_true", help="set true if to debug"
@@ -282,6 +285,9 @@ if __name__ == "__main__":
     args.data_path = os.path.join(args.data_path, args.dataset_name)
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path, exist_ok=True)
+
+    if args.tokenizer_path is None:
+        args.tokenizer_path = args.primer_path
 
     print(args)
     with open(
